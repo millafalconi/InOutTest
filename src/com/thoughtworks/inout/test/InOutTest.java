@@ -32,15 +32,5 @@ public class InOutTest extends InstrumentationTestCase {
 //		assertNotNull(inOutButton);
 //	}
 	
-//	public void testShouldRegisterWhenClickOnButton(){
-//		
-//		InOutActivity mockInOut = mock(InOutActivity.class);
-//		
-//		View realView = getActivity().findViewById(R.id.button_in);
-//		when(mockInOut.findViewById(R.id.button_in)).thenReturn(realView);
-//		Button inOutButton = (Button) mockInOut.findViewById(R.id.button_in);
-//		inOutButton.performClick();
-//	    
-//	}
 
 }
