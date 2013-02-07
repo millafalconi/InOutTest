@@ -1,8 +1,5 @@
 package com.thoughtworks.inout.test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -15,11 +12,11 @@ import android.widget.TimePicker;
 import com.jayway.android.robotium.solo.Solo;
 import com.thoughtworks.inout.Punch;
 import com.thoughtworks.inout.PunchActivity;
-import com.thoughtworks.inout.PunchType;
 import com.thoughtworks.inout.R;
-import com.thoughtworks.inout.TimeCard;
 import com.thoughtworks.inout.clock.TimeMachine;
+import com.thoughtworks.inout.db.SQLLiteTimeCardDAO;
 import com.thoughtworks.inout.db.TimeCardDAO;
+import com.thoughtworks.inout.exception.DataRetrieveException;
 
 public class PunchTest extends ActivityInstrumentationTestCase2<PunchActivity> {
 
@@ -31,6 +28,8 @@ public class PunchTest extends ActivityInstrumentationTestCase2<PunchActivity> {
 	
 	@Override
 	public void setUp() {
+		TimeCardDAO dao = new SQLLiteTimeCardDAO(getActivity());
+		dao.clearDatabase();
 		solo = new Solo(getInstrumentation(), getActivity());
 	}
 	
@@ -68,8 +67,8 @@ public class PunchTest extends ActivityInstrumentationTestCase2<PunchActivity> {
 		assertEquals(datePicker.getDayOfMonth(), cal.get(Calendar.DAY_OF_MONTH));
 		
 		TimePicker timePicker = (TimePicker)solo.getView(PunchActivity.TIME_PICKER_ID);
-		assertEquals(timePicker.getCurrentHour(), (Integer)cal.get(Calendar.HOUR_OF_DAY));
-		assertEquals(timePicker.getCurrentMinute(), (Integer)cal.get(Calendar.MINUTE));
+		assertEquals((Integer)cal.get(Calendar.HOUR_OF_DAY), timePicker.getCurrentHour());
+		assertEquals((Integer)cal.get(Calendar.MINUTE), timePicker.getCurrentMinute());
 	}
 	
 	public void testDateInsert() {
@@ -86,18 +85,22 @@ public class PunchTest extends ActivityInstrumentationTestCase2<PunchActivity> {
 		
 		solo.setDatePicker(datePicker, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH),
 				cal.get(Calendar.DAY_OF_MONTH));
+		solo.setTimePicker(timePicker, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE));
 		String okButton = getActivity().getString(R.string.ok_button);
 		solo.clickOnButton(okButton);
-		TimeCardDAO mockTimeCardDAO = mock(TimeCardDAO.class);
 		
-		verify(mockTimeCardDAO).insertPunch(new Punch(PunchType.getTypeOf(punchText),
-				new Date(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH),
-						cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))));
-		
+		TimeCardDAO tcDao = new SQLLiteTimeCardDAO(getActivity());
+		try {
+			Punch punch = tcDao.getLastPunch();
+			assertEquals(cal.getTime(), punch.getDate());
+		} catch (DataRetrieveException e) {
+			fail(e.getMessage());
+		}
 	}
 	
 	@Override
 	public void tearDown() {
+		TimeMachine.backToPresent();
 		solo.finishOpenedActivities();
 	}
 
